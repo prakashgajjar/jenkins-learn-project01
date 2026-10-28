@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -33,8 +34,12 @@ pipeline {
         stage('Smoke test') {
             steps {
                 sh '''
-                    curl --fail --silent --show-error http://localhost:${FRONTEND_PORT}/ > /dev/null
-                    curl --fail --silent --show-error http://localhost:${FRONTEND_PORT}/api/health
+                    curl --fail --silent --show-error \
+                      http://localhost:${FRONTEND_PORT}/ > /dev/null
+
+                    curl --fail --silent --show-error \
+                      http://localhost:${FRONTEND_PORT}/api/health
+
                     docker compose exec --no-TTY api npm run smoke-test
                 '''
             }
@@ -42,8 +47,22 @@ pipeline {
     }
 
     post {
+        failure {
+            sh '''
+                echo "===== Docker container status ====="
+                docker compose ps -a || true
+
+                echo "===== MongoDB logs ====="
+                docker compose logs --no-color --tail=150 mongo || true
+
+                echo "===== API logs ====="
+                docker compose logs --no-color --tail=100 api || true
+            '''
+        }
+
         always {
-            sh 'docker compose down --volumes --remove-orphans'
+            // Remove test containers and network, but preserve named volumes.
+            sh 'docker compose down --remove-orphans || true'
         }
     }
 }
