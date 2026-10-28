@@ -9,7 +9,7 @@ pipeline {
 
     environment {
         COMPOSE_PROJECT_NAME = "daily-tasks-ci-${BUILD_NUMBER}"
-        FRONTEND_PORT = '8080'
+        FRONTEND_PORT = '8081'
     }
 
     stages {
